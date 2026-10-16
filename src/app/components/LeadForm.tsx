@@ -32,6 +32,57 @@ export default function LeadForm() {
     setStatus("error");
   }
 
+  async function submitLead(formData: {
+  name: string;
+  phone: string;
+  interest: "subscription" | "order" | "question";
+  comment?: string;
+}) {
+  const params = new URLSearchParams(
+    typeof window !== "undefined" ? window.location.search : "",
+  );
+
+  const response = await fetch("/api/lead", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      ...formData,
+      source: params.get("utm_source") ?? "",
+      campaign: params.get("utm_campaign") ?? "",
+      ad: params.get("utm_content") ?? params.get("utm_ad") ?? "",
+      page: window.location.pathname,
+      website: "",
+    }),
+  });
+
+  const result = await response.json().catch(() => null);
+
+  if (response.ok && result?.ok) {
+    return {
+      ok: true,
+      message: result.message ?? "Спасибо! Мы скоро свяжемся с вами.",
+    };
+  }
+
+  if (response.status === 409) {
+    throw new Error(
+      result?.message ?? "Вы уже отправляли заявку. Попробуйте позже.",
+    );
+  }
+
+  if (response.status === 400) {
+    throw new Error(
+      result?.message ?? "Проверьте имя и номер телефона.",
+    );
+  }
+
+  throw new Error(
+    result?.message ?? "Не удалось отправить заявку. Попробуйте позже.",
+  );
+}
+
   return (
     <section className="section lead-section" id="order">
       <div className="container lead-grid">

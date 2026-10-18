@@ -1,123 +1,161 @@
 
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { ArrowRight, CheckCircle2, AlertCircle } from "lucide-react";
+import { FormEvent, useState } from "react";
+import { CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
 
-export default function LeadForm() {
-  const [status, setStatus] = useState<
-    "idle" | "sending" | "success" | "error"
-  >("idle");
+type Interest = "subscription" | "order" | "question";
 
-  const [error, setError] = useState("");
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    const name = String(data.get("name") || "").trim();
-    const phone = String(data.get("phone") || "").trim();
-
-    if (!name || !phone) {
-      setError("Заполните имя и номер телефона.");
-      setStatus("error");
-      return;
-    }
-
-    // The API endpoint will be connected in the backend step.
-    setError(
-      "Форма пока в режиме разработки. Подключите API, чтобы отправлять заявки.",
-    );
-    setStatus("error");
-  }
-
-  async function submitLead(formData: {
+type FormValues = {
   name: string;
   phone: string;
-  interest: "subscription" | "order" | "question";
-  comment?: string;
-}) {
-  const params = new URLSearchParams(
-    typeof window !== "undefined" ? window.location.search : "",
-  );
+  interest: Interest;
+  comment: string;
+  website: string;
+};
 
-  const response = await fetch("/api/lead", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      ...formData,
-      source: params.get("utm_source") ?? "",
-      campaign: params.get("utm_campaign") ?? "",
-      ad: params.get("utm_content") ?? params.get("utm_ad") ?? "",
-      page: window.location.pathname,
-      website: "",
-    }),
-  });
+const initialValues: FormValues = {
+  name: "",
+  phone: "",
+  interest: "subscription",
+  comment: "",
+  website: "",
+};
 
-  const result = await response.json().catch(() => null);
+export default function LeadForm() {
+  const [values, setValues] = useState<FormValues>(initialValues);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState("");
+  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
-  if (response.ok && result?.ok) {
-    return {
-      ok: true,
-      message: result.message ?? "Спасибо! Мы скоро свяжемся с вами.",
-    };
+  function updateField<K extends keyof FormValues>(
+    field: K,
+    value: FormValues[K],
+  ) {
+    setValues((current) => ({ ...current, [field]: value }));
+    setFieldErrors((current) => ({ ...current, [field]: "" }));
+    setError("");
+    setSuccess("");
   }
 
-  if (response.status === 409) {
-    throw new Error(
-      result?.message ?? "Вы уже отправляли заявку. Попробуйте позже.",
-    );
-  }
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
-  if (response.status === 400) {
-    throw new Error(
-      result?.message ?? "Проверьте имя и номер телефона.",
-    );
-  }
+    if (loading) return;
 
-  throw new Error(
-    result?.message ?? "Не удалось отправить заявку. Попробуйте позже.",
-  );
-}
+    setLoading(true);
+    setError("");
+    setSuccess("");
+    setFieldErrors({});
+
+    try {
+      const params = new URLSearchParams(window.location.search);
+
+      const response = await fetch("/api/lead", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: values.name,
+          phone: values.phone,
+          interest: values.interest,
+          comment: values.comment,
+          website: values.website,
+
+          // Рекламные метки
+          source: params.get("utm_source") ?? "",
+          campaign: params.get("utm_campaign") ?? "",
+          ad:
+            params.get("utm_content") ??
+            params.get("utm_ad") ??
+            "",
+          page: window.location.pathname,
+        }),
+      });
+
+      const result = await response.json().catch(() => null);
+
+      if (!response.ok || !result?.ok) {
+        if (result?.errors) {
+          const nextErrors: Record<string, string> = {};
+
+          for (const [field, messages] of Object.entries(
+            result.errors as Record<string, unknown>,
+          )) {
+            if (Array.isArray(messages) && typeof messages[0] === "string") {
+              nextErrors[field] = messages[0];
+            }
+          }
+
+          setFieldErrors(nextErrors);
+        }
+
+        throw new Error(
+          result?.message ??
+            "Не удалось отправить заявку. Попробуйте ещё раз.",
+        );
+      }
+
+      setSuccess(
+        result.message ?? "Спасибо! Мы скоро свяжемся с вами.",
+      );
+      setValues(initialValues);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Проверьте соединение и попробуйте ещё раз.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <section className="section lead-section" id="order">
       <div className="container lead-grid">
-        <div className="lead-copy">
-          <p className="eyebrow">Давайте знакомиться</p>
+        <div>
+          <p className="eyebrow">Будем на связи</p>
+
           <h2 className="section-heading">
-            Расскажите,
-            <br />
-            какой кофе любите.
+            Давайте найдём ваш кофе
           </h2>
+
           <p className="section-copy">
-            Оставьте заявку, и мы перезвоним, поможем выбрать
-            зерно или расскажем, как работает подписка.
-            Никакой оплаты на сайте.
+            Оставьте контакты — поможем выбрать зерно,
+            расскажем о подписке и согласуем доставку.
           </p>
 
           <div className="lead-contact">
-            <span>Наша мастерская</span>
+            <span>Наша обжарочная</span>
             <strong>Минск, ул. Короля, 9</strong>
-            <span>Пн–пт 8:00–20:00 · Сб–вс 10:00–18:00</span>
+            <span>Пн–Пт: 08:00–20:00</span>
+            <span>Сб–Вс: 10:00–18:00</span>
           </div>
         </div>
 
         <form className="lead-form" onSubmit={handleSubmit} noValidate>
           <div className="field">
-            <label htmlFor="lead-name">Как к вам обращаться?</label>
+            <label htmlFor="lead-name">Ваше имя</label>
             <input
               id="lead-name"
               name="name"
-              type="text"
-              placeholder="Ваше имя"
               autoComplete="name"
-              maxLength={100}
+              placeholder="Как к вам обращаться?"
+              value={values.name}
+              onChange={(e) => updateField("name", e.target.value)}
+              aria-invalid={Boolean(fieldErrors.name)}
+              aria-describedby={fieldErrors.name ? "lead-name-error" : undefined}
               required
+              maxLength={100}
             />
+            {fieldErrors.name && (
+              <small id="lead-name-error" role="alert">
+                {fieldErrors.name}
+              </small>
+            )}
           </div>
 
           <div className="field">
@@ -126,12 +164,27 @@ export default function LeadForm() {
               id="lead-phone"
               name="phone"
               type="tel"
-              placeholder="+375 (__) ___-__-__"
               autoComplete="tel"
               inputMode="tel"
+              placeholder="+375 29 123-45-67"
+              value={values.phone}
+              onChange={(e) => updateField("phone", e.target.value)}
+              aria-invalid={Boolean(fieldErrors.phone)}
+              aria-describedby={
+                fieldErrors.phone ? "lead-phone-error" : "lead-phone-hint"
+              }
               required
+              maxLength={30}
             />
-            <small>Пока принимаем белорусские номера.</small>
+            {fieldErrors.phone ? (
+              <small id="lead-phone-error" role="alert">
+                {fieldErrors.phone}
+              </small>
+            ) : (
+              <small id="lead-phone-hint">
+                Белорусский номер, например +375 29 123-45-67
+              </small>
+            )}
           </div>
 
           <div className="field">
@@ -139,53 +192,85 @@ export default function LeadForm() {
             <select
               id="lead-interest"
               name="interest"
-              defaultValue="subscription"
+              value={values.interest}
+              onChange={(e) =>
+                updateField("interest", e.target.value as Interest)
+              }
             >
               <option value="subscription">Подписка на кофе</option>
               <option value="order">Разовый заказ</option>
-              <option value="question">Есть вопрос</option>
+              <option value="question">Задать вопрос</option>
             </select>
           </div>
 
           <div className="field">
             <label htmlFor="lead-comment">
-              Комментарий <span>(необязательно)</span>
+              Комментарий <span>— необязательно</span>
             </label>
             <textarea
               id="lead-comment"
               name="comment"
-              placeholder="Например, люблю кофе для фильтра..."
-              rows={3}
-              maxLength={1000}
+              placeholder="Любимые вкусы, способ заваривания или вопрос..."
+              value={values.comment}
+              onChange={(e) => updateField("comment", e.target.value)}
+              maxLength={2000}
+              rows={4}
             />
           </div>
 
-          {status === "error" && (
+          {/* Honeypot: обычный посетитель не должен заполнять поле */}
+          <div
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              width: 1,
+              height: 1,
+              padding: 0,
+              margin: -1,
+              overflow: "hidden",
+              clip: "rect(0, 0, 0, 0)",
+              whiteSpace: "nowrap",
+              border: 0,
+            }}
+          >
+            <label htmlFor="lead-website">Не заполняйте это поле</label>
+            <input
+              id="lead-website"
+              name="website"
+              type="text"
+              value={values.website}
+              onChange={(e) => updateField("website", e.target.value)}
+              tabIndex={-1}
+              autoComplete="off"
+            />
+          </div>
+
+          {error && (
             <p className="form-message form-error" role="alert">
               <AlertCircle size={17} />
-              {error}
+              <span>{error}</span>
             </p>
           )}
 
-          {status === "success" && (
+          {success && (
             <p className="form-message form-success" role="status">
               <CheckCircle2 size={17} />
-              Заявка отправлена. Скоро свяжемся с вами.
+              <span>{success}</span>
             </p>
           )}
 
           <button
             className="button form-submit"
             type="submit"
-            disabled={status === "sending"}
+            disabled={loading}
           >
-            {status === "sending" ? "Отправляем..." : "Оставить заявку"}
-            <ArrowRight size={17} />
+            {loading ? "Отправляем..." : "Оставить заявку"}
+            {!loading && <ArrowRight size={16} />}
           </button>
 
           <p className="form-privacy">
-            Нажимая кнопку, вы соглашаетесь на обработку
-            указанных данных для связи по вашей заявке.
+            Нажимая кнопку, вы соглашаетесь на обработку указанных
+            контактных данных для ответа на ваш запрос.
           </p>
         </form>
       </div>

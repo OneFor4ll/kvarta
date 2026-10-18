@@ -2,7 +2,10 @@
 import { ImageResponse } from "next/og";
 
 export const alt = "Обжарка «Кварта» — свежий кофе в Минске";
-export const size = { width: 1200, height: 630 };
+export const size = {
+  width: 1200,
+  height: 630,
+};
 export const contentType = "image/png";
 
 export default function OpenGraphImage() {
@@ -15,71 +18,137 @@ export default function OpenGraphImage() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          padding: "72px",
+          padding: "48px 58px",
           background: "#f7f4ec",
           color: "#29271f",
           fontFamily: "sans-serif",
         }}
       >
+        {/* Top label */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
-            fontSize: 22,
-            letterSpacing: 4,
+            fontSize: 18,
+            letterSpacing: 3,
+            color: "#716d61",
           }}
         >
           <span>МИНСК · С 2019 ГОДА</span>
           <span>ОБЖАРКА КОФЕ</span>
         </div>
 
+        {/* Main content */}
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 30,
           }}
         >
+          {/* Brand text */}
           <div
             style={{
-              fontSize: 112,
-              fontWeight: 700,
-              letterSpacing: -5,
-              color: "#a64f35",
-              lineHeight: 1,
+              display: "flex",
+              flexDirection: "column",
+              width: 650,
             }}
           >
-            Кварта
+            <div
+              style={{
+                display: "flex",
+                fontSize: 94,
+                fontWeight: 700,
+                letterSpacing: -4,
+                color: "#a64f35",
+                lineHeight: 1.1,
+              }}
+            >
+              Кварта
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                fontSize: 32,
+                lineHeight: 1.35,
+                marginTop: 24,
+              }}
+            >
+              Кофе, который не нужно ждать долго.
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                fontSize: 22,
+                lineHeight: 1.5,
+                marginTop: 18,
+                color: "#716d61",
+              }}
+            >
+              <span>Свежая обжарка</span>
+              <span>Доставка по Минску</span>
+            </div>
           </div>
 
-          <div style={{ fontSize: 36, marginTop: 28 }}>
-            Кофе, который не нужно ждать долго.
-          </div>
-
+          {/* Coffee illustration */}
           <div
             style={{
-              fontSize: 24,
-              marginTop: 16,
-              color: "#716d61",
+              display: "flex",
+              width: 340,
+              height: 390,
+              flexShrink: 0,
+              borderRadius: 18,
+              background: "#ede7da",
+              alignItems: "center",
+              justifyContent: "center",
+              flexDirection: "column",
             }}
           >
-            Свежая обжарка · Доставка по Минску
+            <div
+              style={{
+                display: "flex",
+                fontSize: 120,
+              }}
+            >
+              ☕
+            </div>
+            <div
+              style={{
+                display: "flex",
+                fontSize: 20,
+                letterSpacing: 3,
+                color: "#716d61",
+                marginTop: 12,
+              }}
+            >
+              KVARTA COFFEE
+            </div>
           </div>
         </div>
 
+        {/* Footer */}
         <div
           style={{
             display: "flex",
             justifyContent: "space-between",
             borderTop: "2px solid #ddd6c8",
-            paddingTop: 22,
-            fontSize: 20,
+            paddingTop: 18,
+            fontSize: 17,
+            letterSpacing: 1,
+            color: "#716d61",
           }}
         >
           <span>МАЛЕНЬКИЕ ПАРТИИ · БОЛЬШОЙ ВКУС</span>
-          <span>КВАРТА / COFFEE</span>
+          <span>KVARTA COFFEE</span>
         </div>
       </div>
     ),
-    { ...size },
+    {
+      ...size,
+    },
   );
 }

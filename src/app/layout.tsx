@@ -1,28 +1,26 @@
 
 import type { Metadata } from "next";
-import "./globals.css";
+
+const siteUrl = "https://YOUR-REAL-DOMAIN";
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "Кварта — свежая обжарка кофе в Минске",
   description:
-    "Обжариваем кофе небольшими партиями по четвергам. Эфиопия, Колумбия, Бразилия и подписка на свежий кофе с доставкой по Минску.",
+    "Свежий кофе маленькими партиями. Обжариваем по четвергам, доставляем по Минску. Выберите зерно или оформите подписку.",
   openGraph: {
-    title: "Кварта — кофе, который приезжает свежим",
+    title: "Кварта — кофе свежей обжарки",
     description:
-      "Небольшая обжарка в Минске. Свежий кофе домой и в офис.",
+      "Кофе маленькими партиями, честные вкусы и доставка по Минску.",
+    siteName: "Обжарка «Кварта»",
     locale: "ru_BY",
     type: "website",
+    url: siteUrl,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Кварта — кофе свежей обжарки",
+    description:
+      "Кофе маленькими партиями и доставка по Минску.",
   },
 };
-
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="ru">
-      <body>{children}</body>
-    </html>
-  );
-}

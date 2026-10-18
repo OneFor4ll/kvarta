@@ -73,7 +73,8 @@ export async function POST(request: NextRequest) {
       }, 201);
     }
 
-    const result = createLead({
+
+    const result = await createLead({
       name: lead.name,
       phone: lead.phone,
       interest: lead.interest,
@@ -82,6 +83,7 @@ export async function POST(request: NextRequest) {
       campaign: lead.campaign,
       ad: lead.ad,
       page: lead.page,
+      website: lead.website,
     });
 
     if (result.duplicate) {
@@ -94,6 +96,7 @@ export async function POST(request: NextRequest) {
         409,
       );
     }
+
 
     return json(
       {

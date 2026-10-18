@@ -1,81 +1,56 @@
 
-import Database from "better-sqlite3";
-import { mkdirSync } from "node:fs";
-import path from "node:path";
+import "server-only";
+import { neon } from "@neondatabase/serverless";
+import { LeadInput } from "./lead-schema";
 
-const dataDir = path.join(process.cwd(), "data");
-mkdirSync(dataDir, { recursive: true });
+const databaseUrl = process.env.DATABASE_URL;
 
-const dbPath = process.env.DATABASE_PATH
-  ? path.resolve(process.env.DATABASE_PATH)
-  : path.join(dataDir, "kvarta.sqlite");
+if (!databaseUrl) {
+  throw new Error("Missing DATABASE_URL environment variable");
+}
 
-mkdirSync(path.dirname(dbPath), { recursive: true });
+const sql = neon(databaseUrl);
 
-const db = new Database(dbPath);
-
-// SQLite настройки
-db.pragma("journal_mode = WAL");
-db.pragma("busy_timeout = 5000");
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS leads (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    phone TEXT NOT NULL,
-    interest TEXT NOT NULL,
-    comment TEXT NOT NULL DEFAULT '',
-    source TEXT NOT NULL DEFAULT '',
-    campaign TEXT NOT NULL DEFAULT '',
-    ad TEXT NOT NULL DEFAULT '',
-    page TEXT NOT NULL DEFAULT '',
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-
-  CREATE INDEX IF NOT EXISTS idx_leads_phone_created
-  ON leads(phone, created_at);
-`);
-
-export type NewLead = {
-  name: string;
-  phone: string;
-  interest: "subscription" | "order" | "question";
-  comment: string;
-  source: string;
-  campaign: string;
-  ad: string;
-  page: string;
-};
-
-const insertLead = db.prepare(`
-  INSERT INTO leads (
-    name, phone, interest, comment,
-    source, campaign, ad, page
-  ) VALUES (
-    @name, @phone, @interest, @comment,
-    @source, @campaign, @ad, @page
-  )
-`);
-
-const findRecentLead = db.prepare(`
-  SELECT id
-  FROM leads
-  WHERE phone = ?
-    AND created_at >= datetime('now', '-10 minutes')
-  LIMIT 1
-`);
-
-export const createLead = db.transaction((lead: NewLead) => {
-  const duplicate = findRecentLead.get(lead.phone);
-
-  if (duplicate) {
-    return { duplicate: true as const };
-  }
-
-  const result = insertLead.run(lead);
+export async function createLead(lead: LeadInput) {
+  const rows = await sql`
+    WITH lock AS MATERIALIZED (
+      SELECT pg_advisory_xact_lock(
+        hashtextextended(${lead.phone}, 0)
+      )
+    ),
+    recent AS MATERIALIZED (
+      SELECT l.id
+      FROM leads AS l
+      CROSS JOIN lock
+      WHERE l.phone = ${lead.phone}
+        AND l.created_at > NOW() - INTERVAL '10 minutes'
+      LIMIT 1
+    ),
+    inserted AS (
+      INSERT INTO leads (
+        name, phone, interest, comment,
+        source, campaign, ad, page
+      )
+      SELECT
+        ${lead.name},
+        ${lead.phone},
+        ${lead.interest},
+        ${lead.comment ?? ""},
+        ${lead.source ?? ""},
+        ${lead.campaign ?? ""},
+        ${lead.ad ?? ""},
+        ${lead.page ?? ""}
+      FROM lock
+      WHERE NOT EXISTS (SELECT 1 FROM recent)
+      RETURNING id
+    )
+    SELECT
+      EXISTS (SELECT 1 FROM recent) AS duplicate,
+      (SELECT id FROM inserted) AS id
+  `;
 
   return {
-    duplicate: false as const,
-    id: Number(result.lastInsertRowid),
+    duplicate: Boolean(rows[0]?.duplicate),
+    id: rows[0]?.id ?? null,
   };
-});
+}

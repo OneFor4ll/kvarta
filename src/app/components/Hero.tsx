@@ -40,7 +40,7 @@ export default function Hero() {
         <div className="hero-visual">
           <img
             className="hero-image"
-            src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=1200&q=85"
+            src="https://images.unsplash.com/photo-1447933601403-0c6688de566e?auto=format&fit=crop&w=900&q=70"
             alt="Свежие кофейные зёрна крупным планом"
             fetchPriority="high"
           />

@@ -1,7 +1,6 @@
 
 import { ImageResponse } from "next/og";
 
-export const runtime = "edge";
 export const alt = "Обжарка «Кварта» — свежий кофе в Минске";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
@@ -34,7 +33,12 @@ export default function OpenGraphImage() {
           <span>ОБЖАРКА КОФЕ</span>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column" }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
           <div
             style={{
               fontSize: 112,
@@ -46,9 +50,11 @@ export default function OpenGraphImage() {
           >
             Кварта
           </div>
+
           <div style={{ fontSize: 36, marginTop: 28 }}>
             Кофе, который не нужно ждать долго.
           </div>
+
           <div
             style={{
               fontSize: 24,

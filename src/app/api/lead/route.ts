@@ -1,6 +1,6 @@
-
 import { createLead } from "@/app/lib/db";
 import { leadSchema } from "@/app/lib/lead-schema";
+import { notifyTelegram } from "@/app/lib/telegram";
 import { NextRequest, NextResponse } from "next/server";
 
 const MAX_BODY_BYTES = 10 * 1024;
@@ -97,6 +97,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+        try {
+      await notifyTelegram(lead);
+    } catch {
+      // Заявка уже сохранена в Neon.
+      // Ошибка Telegram не должна мешать отправке формы.
+      console.error("Telegram notification failed");
+    }
 
     return json(
       {

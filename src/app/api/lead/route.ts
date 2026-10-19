@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-        try {
+    try {
       await notifyTelegram(lead);
     } catch {
       // Заявка уже сохранена в Neon.
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     return json(
       {
         ok: true,
-        message: "Thank you! We will contact you soon.",
+        message: "Спасибо! Мы скоро свяжемся с вами.",
       },
       201,
     );
